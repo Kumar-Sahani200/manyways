@@ -34,6 +34,27 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+it.each([
+  ["outcome", "Intended outcome", "Leave readers hopeful"],
+  ["audience", "Audience", "Readers of short fiction"],
+  ["tone", "Tone", "Quiet and hopeful"],
+  ["constraints", "Constraints", "No violence"],
+])("preserves focus and successive keystrokes when entering %s", async (field, label, text) => {
+  const user = userEvent.setup();
+  api.getProject.mockResolvedValue({ ...project(), goal: { ...goal, [field]: "" } });
+  render(<Editor id="p1" initialTab="goal" notify={vi.fn()} onClose={vi.fn()} />);
+  const input = await screen.findByLabelText(label);
+  await user.type(input, text[0]);
+  expect(document.activeElement).toBe(input);
+  await user.keyboard(text.slice(1));
+  expect(screen.getByLabelText(label)).toBe(input);
+  expect(document.activeElement).toBe(input);
+  expect(input.value).toBe(text);
+  await user.click(screen.getByRole("button", { name: "Save now" }));
+  await waitFor(() => expect(api.saveProject).toHaveBeenCalled());
+  expect(api.saveProject.mock.lastCall[0].goal[field]).toBe(text);
+});
+
 it("assembles shared ancestors identically to exports and excludes unfinished paths", () => {
   const nodes = [root, ending, { ...ending, id: "b", is_end: false }];
   expect(assemble(nodes, "a").text).toBe("Shared opening.\n\nA hopeful ending.");

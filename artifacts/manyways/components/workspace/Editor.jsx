@@ -248,28 +248,31 @@ function AgeInput({ id, label, value, onCommit }) {
   const [t, setT] = useState(value ?? "");
   return (<div className="field"><label htmlFor={id}>{label}</label><input id={id} className="in" style={{ width: 120 }} inputMode="numeric" value={t} onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ""); setT(v); onCommit(v === "" ? null : parseInt(v, 10)); }} /></div>);
 }
-function GoalTab({ goal, setGoal, gErr }) {
-  const [touched, setTouched] = useState(false);
-  const F = ({ k, label, hint, area, optional }) => (
+function GoalField({ k, label, hint, area, optional, goal, setGoal, touched, gErr }) {
+  return (
     <div className="field"><label htmlFor={`g-${k}`}>{label}{optional && <span className="ws-muted"> (optional)</span>}</label>
       {area ? <textarea id={`g-${k}`} className="ta" style={{ minHeight: 90 }} value={goal[k] || ""} onChange={(e) => setGoal(k, e.target.value)} />
         : <input id={`g-${k}`} className="in" value={goal[k] || ""} onChange={(e) => setGoal(k, e.target.value)} />}
       {hint && <span className="ws-muted" style={{ fontSize: 12 }}>{hint}</span>}
       {touched && gErr[k] && <span className="err" role="alert">{gErr[k]}</span>}</div>
   );
+}
+function GoalTab({ goal, setGoal, gErr }) {
+  const [touched, setTouched] = useState(false);
+  const fields = { goal, setGoal, gErr, touched };
   return (
     <div className="panel" onBlur={() => setTouched(true)}>
       <p className="ws-muted">The goal is saved with the project and frozen into every generation and evaluation run. It must be complete before either can start.</p>
-      <F k="outcome" label="Intended outcome" hint="What should a reader feel, understand or do by the end?" />
-      <F k="audience" label="Audience" hint="Who is this for? Describe interests and context, not stereotypes." />
+      <GoalField {...fields} k="outcome" label="Intended outcome" hint="What should a reader feel, understand or do by the end?" />
+      <GoalField {...fields} k="audience" label="Audience" hint="Who is this for? Describe interests and context, not stereotypes." />
       <div className="row" style={{ alignItems: "flex-start" }}>
         <AgeInput id="g-amin" label="Minimum age" value={goal.age_min} onCommit={(v) => setGoal("age_min", v)} />
         <AgeInput id="g-amax" label="Maximum age" value={goal.age_max} onCommit={(v) => setGoal("age_max", v)} />
       </div>
       {touched && gErr.age && <span className="err" role="alert">{gErr.age}</span>}
-      <div className="row" style={{ alignItems: "flex-start" }}><F k="gender" label="Gender" optional /><F k="nationality" label="Nationality" optional /></div>
-      <F k="tone" label="Tone" hint="For example: wry, tender, restrained." />
-      <F k="constraints" label="Constraints" area hint="Content limits, length, themes to avoid. Write 'none' if there are none." />
+      <div className="row" style={{ alignItems: "flex-start" }}><GoalField {...fields} k="gender" label="Gender" optional /><GoalField {...fields} k="nationality" label="Nationality" optional /></div>
+      <GoalField {...fields} k="tone" label="Tone" hint="For example: wry, tender, restrained." />
+      <GoalField {...fields} k="constraints" label="Constraints" area hint="Content limits, length, themes to avoid. Write 'none' if there are none." />
       {Object.keys(gErr).length === 0 ? <p className="ws-ok"><Check size={14} /> Goal is complete.</p> : <p className="ws-muted">{Object.keys(gErr).length} required item{Object.keys(gErr).length > 1 ? "s" : ""} still needed before runs can start.</p>}
     </div>
   );
