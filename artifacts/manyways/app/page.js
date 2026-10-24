@@ -4,15 +4,16 @@ import Nav from "../components/Nav";
 import Logo from "../components/Logo";
 import Reveal from "../components/Reveal";
 import BranchDemo from "../components/BranchDemo";
+import { appEntry } from "../lib/app-url";
 
 const marquee = ["Branch the draft", "Hold the original", "Name the audience", "Weigh the trade-offs", "Choose with a reason", "Publish with intent"];
 
 const faqs = [
-  ["Does ManyWays run a live simulation today?", "Not yet. This frontend is an early prototype. The report in Studio is an illustrative sample that is not generated from your content. Your projects are saved only in this browser."],
+  ["What is Emergent Intelligence?", "Distinct simulated readers examine your story independently. An orchestrator combines their perspectives, showing agreement, disagreement, and how each version serves your goal."],
   ["Will it predict my engagement?", "No. ManyWays is designed to help you explore likely reactions and trade-offs. It is not a substitute for testing with real people, and it will never promise performance."],
   ["Who is it for?", "Writers and creators making two kinds of decisions: social content such as posts and hooks, and storytelling such as scenes and character choices."],
-  ["Where does my work go?", "In this prototype, nowhere. Everything lives in your browser's local storage. Clearing site data removes it."],
-  ["Can I edit the original?", "The original is kept intact by design. To change it, duplicate it into a branch and edit the branch. Lineage is tracked with a parent for every version."],
+  ["Where does my work go?", "Workspace projects are stored on the platform under your account. When you request generation or evaluation, the selected text and goal are sent to our agent provider. Do not upload confidential or sensitive personal information."],
+  ["Can I edit every section?", "Yes. Write manually or import a text file, branch after any section, and revise any node. An end node marks a complete path. Evaluation results retain the version they were based on."],
 ];
 
 function Tree() {
@@ -39,14 +40,14 @@ export default function Home() {
         <section className="hero">
           <div className="wrap hero-grid">
             <div>
-              <div className="pill"><i /> Early prototype &middot; Emergent Intelligence for creative decisions</div>
+              <div className="pill"><i /> Emergent Intelligence for creative decisions</div>
               <h1>Explore <span className="it">every version</span> before it goes live.</h1>
               <p className="lead">ManyWays is a workspace where writers and creators branch a draft into alternates, describe the people it is for, and weigh the trade-offs, so the version you publish is a choice, not a guess.</p>
               <div className="cta-row">
-                <Link href="/studio" className="btn">Start an experiment <ArrowRight size={16} /></Link>
-                <Link href="/studio?sample=1" className="btn ghost">Load a sample project</Link>
+                <Link href={appEntry} className="btn">Start an experiment <ArrowRight size={16} /></Link>
+                <a href="#method" className="btn ghost">Explore the method</a>
               </div>
-              <p className="fine">Prototype note: reports in Studio are illustrative samples. Nothing is analysed live and projects stay in your browser.</p>
+              <p className="fine">Different perspectives. Explicit trade-offs. Simulated feedback, never a promise of real-world performance.</p>
             </div>
             <Tree />
           </div>
@@ -80,10 +81,10 @@ export default function Home() {
             </Reveal>
             <Reveal className="steps">
               {[
-                ["1", "Create", "Paste a draft, pick Social Content or Storytelling, or start from a sample."],
-                ["2", "Branch", "Duplicate any version, rename it, edit it. The original stays untouched."],
+                ["1", "Create", "Write a story section by section, or upload a text file and describe your goal."],
+                ["2", "Branch", "Explore alternate continuations. Edit any section and mark each complete path with an ending."],
                 ["3", "Set the audience", "Describe who it is for, their ages, the tone, the outcome, and how you measure success."],
-                ["4", "Compare", "Select up to three versions and read strengths, risks, reactions, and a recommendation."],
+                ["4", "Compare", "Let 10–15 distinct simulated readers evaluate each path, then compare an orchestrated ranking."],
               ].map(([n, t, d]) => (
                 <div className="step" key={n}><span className="num">{n}</span><h3>{t}</h3><p>{d}</p></div>
               ))}
@@ -156,9 +157,9 @@ export default function Home() {
             </Reveal>
             <Reveal className="honest">
               <div className="hbox"><h3><Check size={16} color="#0e7a6b" /> ManyWays helps you</h3>
-                <ul><li>Keep the original beside every alternative</li><li>Name the audience and the goal in writing</li><li>See trade-offs before you commit</li><li>Choose a version with a stated reason</li></ul></div>
+                <ul><li>Explore alternative story paths</li><li>Name the audience and the goal in writing</li><li>See trade-offs before you commit</li><li>Choose a version with a stated reason</li></ul></div>
               <div className="hbox"><h3><XIcon size={16} color="#b3261e" /> ManyWays does not</h3>
-                <ul><li>Guarantee real-world engagement</li><li>Replace testing with real people</li><li>Present sample reports as live analysis</li><li>Send your drafts anywhere in this prototype</li></ul></div>
+                <ul><li>Guarantee real-world engagement</li><li>Replace testing with real people</li><li>Treat demographics as fixed personalities</li><li>Hide disagreement behind one score</li></ul></div>
             </Reveal>
           </div>
         </section>
@@ -177,10 +178,9 @@ export default function Home() {
             <Reveal className="final">
               <Sparkles size={26} color="#ee4a1c" />
               <h2 style={{ maxWidth: 720 }}>Write the version you <span className="it">did not</span> write yet.</h2>
-              <p className="lead">Open Studio, load the sample, and walk through all four steps in about two minutes.</p>
+              <p className="lead">Give your story room to diverge. Find the path that serves your intention.</p>
               <div className="cta-row" style={{ justifyContent: "center" }}>
-                <Link href="/studio?sample=1" className="btn">Open the sample experiment <ArrowRight size={16} /></Link>
-                <Link href="/studio" className="btn ghost">Start from blank</Link>
+                <Link href={appEntry} className="btn">Open your workspace <ArrowRight size={16} /></Link>
               </div>
             </Reveal>
           </div>
@@ -189,8 +189,8 @@ export default function Home() {
       <footer>
         <div className="wrap foot">
           <span className="logo" style={{ fontSize: 15 }}><Logo size={22} /> ManyWays</span>
-          <nav aria-label="Footer"><a href="#problem">Why</a><a href="#method">Method</a><a href="#faq">FAQ</a><Link href="/studio">Studio</Link></nav>
-          <span>Early prototype. Sample reports are illustrative.</span>
+          <nav aria-label="Footer"><a href="#problem">Why</a><a href="#method">Method</a><a href="#faq">FAQ</a><Link href={appEntry}>Workspace</Link></nav>
+          <span>Emergent Intelligence. Human intention.</span>
         </div>
       </footer>
     </>

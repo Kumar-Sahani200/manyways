@@ -4,4 +4,11 @@ out/
 dist/
 *.log
 .env*
+!.env.example
+!example.env
+.pythonlibs/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
 /generated-artifacts/
