@@ -1,0 +1,8 @@
+{
+  "name": "manyways-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @workspace/manyways dev",
+    "build": "pnpm --filter @workspace/manyways build"
+  }
+}
