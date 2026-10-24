@@ -5,6 +5,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ||
 
 export default defineConfig({
   testDir: "./tests",
+  testMatch: "**/*.spec.js",
   outputDir: "../../generated-artifacts/test-results",
   reporter: "list",
   forbidOnly: !!process.env.CI,

@@ -1,0 +1,94 @@
+# Backend only. manyways.si frontend/Clerk/dashboard remain on Vercel.
+# Review paid compute and supply rotated secrets in Render before provisioning.
+services:
+  - type: web
+    name: manyways-api
+    runtime: python
+    plan: 0.5c-512mb
+    buildCommand: pip install -r services/api/requirements.txt
+    startCommand: python -m uvicorn services.api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    domains:
+      - app.manyways.si
+    buildFilter:
+      paths:
+        - services/api/**
+        - render.yaml
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.11
+      - key: MONGODB_DATABASE
+        value: manyways
+      - key: MONGODB_URI
+        sync: false
+      - key: CLERK_ISSUER_URL
+        sync: false
+      - key: CLERK_AUTHORIZED_PARTIES
+        value: https://manyways.si,https://www.manyways.si
+      - key: AGENTICORG_BASE_URL
+        sync: false
+      - key: AGENTICORG_API_KEY
+        sync: false
+      - key: AGENTICORG_COMPANY_ID
+        sync: false
+      - key: AGENTICORG_BRANCH_AGENT_ID
+        sync: false
+      - key: AGENTICORG_AUDIENCE_AGENT_ID
+        sync: false
+      - key: AGENTICORG_RANKER_AGENT_ID
+        sync: false
+
+  - type: worker
+    name: manyways-agent-worker
+    runtime: python
+    plan: 0.5c-512mb
+    buildCommand: pip install -r services/api/requirements.txt
+    startCommand: python -m services.api.worker
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - services/api/**
+        - render.yaml
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.11
+      - key: AGENT_CONCURRENCY
+        value: "3"
+      - key: MONGODB_DATABASE
+        value: manyways
+      - key: MONGODB_URI
+        fromService:
+          type: web
+          name: manyways-api
+          envVarKey: MONGODB_URI
+      - key: AGENTICORG_BASE_URL
+        fromService:
+          type: web
+          name: manyways-api
+          envVarKey: AGENTICORG_BASE_URL
+      - key: AGENTICORG_API_KEY
+        fromService:
+          type: web
+          name: manyways-api
+          envVarKey: AGENTICORG_API_KEY
+      - key: AGENTICORG_COMPANY_ID
+        fromService:
+          type: web
+          name: manyways-api
+          envVarKey: AGENTICORG_COMPANY_ID
+      - key: AGENTICORG_BRANCH_AGENT_ID
+        fromService:
+          type: web
+          name: manyways-api
+          envVarKey: AGENTICORG_BRANCH_AGENT_ID
+      - key: AGENTICORG_AUDIENCE_AGENT_ID
+        fromService:
+          type: web
+          name: manyways-api
+          envVarKey: AGENTICORG_AUDIENCE_AGENT_ID
+      - key: AGENTICORG_RANKER_AGENT_ID
+        fromService:
+          type: web
+          name: manyways-api
+          envVarKey: AGENTICORG_RANKER_AGENT_ID

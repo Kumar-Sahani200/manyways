@@ -1,0 +1,20 @@
+[project]
+name = "manyways-api"
+version = "0.1.0"
+description = "ManyWays authenticated story API and durable agent worker"
+requires-python = ">=3.13"
+dependencies = [
+    "agenticorg==0.4.0",
+    "fastapi>=0.162.0",
+    "httpx>=0.28.1",
+    "jsonschema>=4.26.0",
+    "mongomock>=4.3.0",
+    "pyjwt[crypto]>=2.15.1",
+    "pymongo>=4.19.0",
+    "pytest>=9.1.1",
+    "pyyaml>=6.0.3",
+    "uvicorn>=0.54.0",
+]
+
+[tool.uv]
+package = false
