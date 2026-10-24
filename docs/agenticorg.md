@@ -13,9 +13,10 @@ company_id=...)`. A UUID takes the direct `/api/v1/agents/{id}/run` path;
 an agent type takes `/api/v1/a2a/tasks` and requires company context and possibly
 `a2a:write`. Actual tenant grants and the deployed provider API remain authoritative.
 
-**No default provider endpoint is assumed.** The public SDK defaults to a
-different domain from the Pine Labs reference. Verify the exact environment
-that issued the key and set `AGENTICORG_BASE_URL` explicitly. This application's
+**The owner confirmed `https://agenticorg.hackathon.pinelabs.com`.** The public SDK
+defaults to a different domain, so set `AGENTICORG_BASE_URL` explicitly.
+Authorization and contract compatibility must still be verified against the
+deployed hackathon API, not assumed from the public repository. This application's
 API does not accept company IDs, provider URLs, or agent IDs from users or model
 output.
 
@@ -96,10 +97,12 @@ charges. Store only provider error categories, never raw error bodies or keys.
 
 ## Live acceptance gate
 
-After rotated secrets, company context, and reviewed agent IDs are configured:
+After replacement secrets and the confirmed base URL are configured:
 1. Run `python -m services.api.smoke` for a bounded authorized
    `client.agents.list()` read; it does not log raw records.
 2. Confirm missing/invalid credentials and unavailable grants are rejected.
+   Only then discover the authorized company and configure/review the three
+   agent roles. Discovery does not require agent IDs to be configured first.
 3. Generate two short story paths and apply the result.
 4. Evaluate both with 10 personas; confirm 20 pair results and a complete ranking.
 5. Verify output shapes, real quotes, cancellation, retry behavior, and ownership.

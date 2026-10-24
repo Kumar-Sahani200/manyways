@@ -268,3 +268,13 @@ def test_invented_evidence_rejected(setup):
     result = client.get(f"/v1/runs/{run['id']}").json()
     assert result["status"] == "partial" and result["progress"] == 0
     assert result["ranking"] is None
+
+
+def test_discovery_configuration_does_not_require_agent_ids(monkeypatch):
+    monkeypatch.setenv("AGENTICORG_API_KEY", "test-only")
+    monkeypatch.setenv("AGENTICORG_BASE_URL", "https://provider.example")
+    for key in ["AGENTICORG_COMPANY_ID", *provider.AGENT_SETTINGS.values()]:
+        monkeypatch.delenv(key, raising=False)
+    provider.check_config(for_execution=False)
+    with pytest.raises(provider.ProviderError, match="AGENTICORG_COMPANY_ID"):
+        provider.check_config()

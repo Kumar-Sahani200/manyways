@@ -20,8 +20,10 @@ AGENT_SETTINGS = {
 }
 
 
-def check_config():
-    required = ["AGENTICORG_API_KEY", "AGENTICORG_BASE_URL", "AGENTICORG_COMPANY_ID", *AGENT_SETTINGS.values()]
+def check_config(for_execution=True):
+    required = ["AGENTICORG_API_KEY", "AGENTICORG_BASE_URL"]
+    if for_execution:
+        required += ["AGENTICORG_COMPANY_ID", *AGENT_SETTINGS.values()]
     missing = [key for key in required if not os.getenv(key)]
     if missing:
         raise ProviderError("AgenticOrg setup is incomplete: " + ", ".join(missing))

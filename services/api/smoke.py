@@ -10,7 +10,7 @@ from .provider import ProviderError, check_config
 
 def main():
     try:
-        check_config()
+        check_config(for_execution=False)
         with AgenticOrg(
             api_key=os.environ["AGENTICORG_API_KEY"],
             base_url=os.environ["AGENTICORG_BASE_URL"], timeout=20,

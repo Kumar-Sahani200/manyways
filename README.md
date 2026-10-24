@@ -96,6 +96,19 @@ execution. Browser smoke tests check marketing navigation and protected routes
 without requiring production credentials. A live authenticated acceptance run is
 required after secrets are configured.
 
+For an opt-in check using the current Replit preview and a Clerk **development**
+instance:
+
+```sh
+pnpm --filter @workspace/manyways exec node scripts/live-auth-check.cjs --live
+```
+
+This signs in a temporary synthetic Clerk user through a short-lived ticket,
+checks real gateway/JWT verification, Atlas persistence, UI edits/reopening, and
+branch export, then deletes the test project and user. It refuses production
+Clerk instances and never prints tokens. It does not test Google consent or
+AgenticOrg execution.
+
 GitHub Actions checks Python contracts, UI component journeys, production build,
 and Chromium smoke tests. CI and Vercel deployments are independent unless branch
 protection/deployment checks are configured in those services.
