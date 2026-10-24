@@ -5,6 +5,11 @@ const protectedRoute = createRouteMatcher(["/workspace(.*)", "/api/backend(.*)"]
 const configured = () => !!(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
 
 const authenticated = clerkMiddleware(async (auth, request) => {
+  if (request.nextUrl.pathname.startsWith("/api/backend")) {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ detail: "Sign in to continue." }, { status: 401 });
+    return;
+  }
   if (protectedRoute(request)) await auth.protect();
 }, { signInUrl: "/sign-in", signUpUrl: "/sign-up" });
 

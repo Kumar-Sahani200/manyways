@@ -14,7 +14,7 @@ test("workspace and old Studio remain protected without credentials", async ({ p
   await page.goto("/studio?sample=1");
   await expect(page).toHaveURL(/\/(setup|sign-in)/);
   await expect(page.getByText("Illustrative sample report.")).toHaveCount(0);
-  const response = await request.get("/api/backend/projects");
+  const response = await request.get("/api/backend/projects", { maxRedirects: 0, headers: { Accept: "application/json" } });
   expect([401, 404, 503]).toContain(response.status());
   const body = await response.text();
   expect(body).not.toContain("sk_test_");
@@ -28,6 +28,12 @@ test("mobile marketing navigation and setup screen fit viewport", async ({ page 
   await expect(page).toHaveURL(/#method$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   await page.goto("/sign-in");
-  await expect(page.getByText("Sign-in is not configured in this environment yet.", { exact: false })).toBeVisible();
+  const setup = page.getByText("Sign-in is not configured in this environment yet.", { exact: false });
+  const signIn = page.getByRole("heading", { name: /Sign in to/i });
+  await expect(setup.or(signIn)).toBeVisible();
+  if (await signIn.isVisible()) {
+    await expect(page.getByRole("button", { name: /Continue with Google/i })).toBeVisible();
+    await expect(page.getByLabel("Email address", { exact: true })).toBeVisible();
+  }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
