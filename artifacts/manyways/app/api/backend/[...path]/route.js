@@ -16,11 +16,9 @@ async function gateway(request, context) {
   const { path } = await context.params;
   const endpoint = path.join("/");
   if (!allowed.test(endpoint)) return Response.json({ detail: "Not found." }, { status: 404 });
-  const origin = process.env.MANYWAYS_API_URL || (
-    process.env.NODE_ENV === "production"
-      ? "https://manyways.onrender.com"
-      : "http://127.0.0.1:8000"
-  );
+  const origin = process.env.NODE_ENV === "production"
+    ? "https://manyways.onrender.com"
+    : process.env.MANYWAYS_API_URL || "http://127.0.0.1:8000";
   let url;
   try {
     url = new URL(origin);
