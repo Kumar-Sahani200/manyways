@@ -1,45 +1,32 @@
 import { test, expect } from "@playwright/test";
 
-test("custom draft, independent branches, audience validation and sample report persist", async ({ page }) => {
-  await page.goto("/studio");
-  await page.getByRole("button", { name: "Create experiment", exact: true }).click();
-  await expect(page.getByText("Add a title.")).toBeVisible();
-  await page.getByLabel("Project title").fill("Launch message");
-  await page.getByLabel("Original content", { exact: true }).fill("Original draft that must remain preserved.");
-  await page.getByRole("button", { name: "Create experiment", exact: true }).click();
-  await expect(page.getByLabel("Original content", { exact: true })).toHaveAttribute("readonly", "");
-  await page.getByRole("button", { name: "Duplicate as branch" }).first().click();
-  await page.getByLabel("Version name").first().fill("New hook");
-  await page.getByLabel("New hook content").fill("An independently edited alternative.");
-  await page.getByRole("button", { name: "Duplicate as branch" }).first().click();
-  await page.getByLabel("Compare").nth(1).check();
-  await page.getByLabel("Compare").nth(2).check();
-  await page.getByRole("button", { name: "Duplicate as branch" }).first().click();
-  await expect(page.getByLabel("Compare").nth(3)).toBeDisabled();
-  await expect(page.getByLabel("Original content", { exact: true })).toHaveValue("Original draft that must remain preserved.");
-  await page.getByRole("button", { name: "Set audience" }).click();
-  await page.getByRole("button", { name: "Generate sample report" }).click();
-  await expect(page.getByText("Describe who this is for.")).toBeVisible();
-  await page.getByLabel("Audience description").fill("Indie founders");
-  await page.getByLabel("Desired outcome").fill("Meaningful discussion");
-  await page.getByRole("button", { name: "Generate sample report" }).click();
-  await expect(page.getByText("Illustrative sample report.", { exact: true })).toBeVisible();
-  await expect(page.getByText("This report is not generated from your content", { exact: false })).toBeVisible();
-  await page.reload();
-  await page.getByRole("button", { name: /Launch message Social Content/ }).click();
-  await expect(page.getByLabel("New hook content")).toHaveValue("An independently edited alternative.");
-  await expect(page.getByLabel("Original content", { exact: true })).toHaveValue("Original draft that must remain preserved.");
+test("marketing explains the actual product without sample entry points", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("every version");
+  await expect(page.getByRole("link", { name: /sample/i })).toHaveCount(0);
+  await expect(page.locator('a[href^="/studio"]')).toHaveCount(0);
+  await expect(page.locator('a[href="/workspace"]').first()).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("YC-backed");
 });
 
-test("landing navigation and mobile layout work", async ({ page }) => {
+test("workspace and obsolete studio require sign-in without honoring hostile returns", async ({ page }) => {
+  await page.goto("/workspace");
+  await expect(page).toHaveURL(/\/sign-in/);
+  await page.goto("/studio?sample=1&redirect_url=https://evil.example");
+  await expect(page).toHaveURL(/\/sign-in/);
+  expect(new URL(page.url()).hostname).not.toBe("evil.example");
+});
+
+test("mobile marketing navigation is accessible without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await page.getByRole("button", { name: "Open menu" }).click();
-  await page.getByRole("link", { name: "Method", exact: true }).first().click();
-  await expect(page).toHaveURL(/#method$/);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
-  await page.goto("/studio?sample=1");
-  await expect(page.getByText("Preserved, read-only")).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  const menu = page.getByRole("button", { name: "Open menu" });
+  await menu.click();
+  await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
+test("anonymous backend requests are refused", async ({ request }) => {
+  const response = await request.get("/api/backend/v1/projects");
+  expect(response.status()).toBe(401);
 });

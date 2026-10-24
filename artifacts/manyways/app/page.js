@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WORKSPACE_URL } from "../lib/navigation";
 import { ArrowRight, GitBranch, Layers, Users, Scale, Check, X as XIcon, Sparkles, Compass } from "lucide-react";
 import Nav from "../components/Nav";
 import Logo from "../components/Logo";
@@ -8,11 +9,12 @@ import BranchDemo from "../components/BranchDemo";
 const marquee = ["Branch the draft", "Hold the original", "Name the audience", "Weigh the trade-offs", "Choose with a reason", "Publish with intent"];
 
 const faqs = [
-  ["Does ManyWays run a live simulation today?", "Not yet. This frontend is an early prototype. The report in Studio is an illustrative sample that is not generated from your content. Your projects are saved only in this browser."],
-  ["Will it predict my engagement?", "No. ManyWays is designed to help you explore likely reactions and trade-offs. It is not a substitute for testing with real people, and it will never promise performance."],
-  ["Who is it for?", "Writers and creators making two kinds of decisions: social content such as posts and hooks, and storytelling such as scenes and character choices."],
-  ["Where does my work go?", "In this prototype, nowhere. Everything lives in your browser's local storage. Clearing site data removes it."],
-  ["Can I edit the original?", "The original is kept intact by design. To change it, duplicate it into a branch and edit the branch. Lineage is tracked with a parent for every version."],
+  ["Does ManyWays measure real reader engagement?", "No. Personas are simulated by a language model to stress-test a draft against the goal you state. Treat the output as structured reasoning about disagreement, never as a forecast or a replacement for real readers."],
+  ["What happens when a run only partly finishes?", "It is labelled partial. You can read every reaction that did arrive, but ranking is only produced when every persona has evaluated every chosen branch."],
+  ["Who is it for?", "Writers and creators who face branching choices: interactive fiction, scenes with alternate directions, and social or launch copy with competing openings."],
+  ["Where does my work go?", "Projects are saved to your private account. Drafts are sent to the model providers only when you start a generation or evaluation run."],
+  ["Can generation overwrite my edits?", "Never automatically. Generated trees arrive as a proposal that you review, and nothing is replaced until you confirm."],
+  ["What is AgenticOrg's role?", "The main workflow runs on Groq with LangChain and LangGraph. Each evaluation run also makes one bounded attempt at an AgenticOrg advisory, reported honestly beside the results and independent of scores and rankings."],
 ];
 
 function Tree() {
@@ -39,14 +41,14 @@ export default function Home() {
         <section className="hero">
           <div className="wrap hero-grid">
             <div>
-              <div className="pill"><i /> Early prototype &middot; Emergent Intelligence for creative decisions</div>
+              <div className="pill"><i /> Emergent Intelligence for creative decisions</div>
               <h1>Explore <span className="it">every version</span> before it goes live.</h1>
               <p className="lead">ManyWays is a workspace where writers and creators branch a draft into alternates, describe the people it is for, and weigh the trade-offs, so the version you publish is a choice, not a guess.</p>
               <div className="cta-row">
-                <Link href="/studio" className="btn">Start an experiment <ArrowRight size={16} /></Link>
-                <Link href="/studio?sample=1" className="btn ghost">Load a sample project</Link>
+                <Link href={WORKSPACE_URL} className="btn">Sign in or start writing <ArrowRight size={16} /></Link>
+                <a href="#method" className="btn ghost">See the workflow</a>
               </div>
-              <p className="fine">Prototype note: reports in Studio are illustrative samples. Nothing is analysed live and projects stay in your browser.</p>
+              <p className="fine">Simulated readers help you reason about trade-offs. They do not measure real engagement.</p>
             </div>
             <Tree />
           </div>
@@ -76,14 +78,14 @@ export default function Home() {
           <div className="wrap">
             <Reveal className="sec-head">
               <span className="mono">02 / Method</span>
-              <h2>Four steps from a draft to a <span className="it">decision</span>.</h2>
+              <h2>Four steps from a story tree to a <span className="it">decision</span>.</h2>
             </Reveal>
             <Reveal className="steps">
               {[
-                ["1", "Create", "Paste a draft, pick Social Content or Storytelling, or start from a sample."],
-                ["2", "Branch", "Duplicate any version, rename it, edit it. The original stays untouched."],
-                ["3", "Set the audience", "Describe who it is for, their ages, the tone, the outcome, and how you measure success."],
-                ["4", "Compare", "Select up to three versions and read strengths, risks, reactions, and a recommendation."],
+                ["1", "Write or generate", "Build a node tree by hand, or upload a UTF-8 .txt file and review a proposed tree."],
+                ["2", "Branch and end", "Add children and siblings, then mark endings. Every root-to-end path becomes a complete branch."],
+                ["3", "Set the goal", "State the outcome, audience, ages, tone and constraints once. They are frozen into each run."],
+                ["4", "Evaluate and choose", "10 to 15 simulated personas read each chosen branch. Compare scores, evidence and disagreement."],
               ].map(([n, t, d]) => (
                 <div className="step" key={n}><span className="num">{n}</span><h3>{t}</h3><p>{d}</p></div>
               ))}
@@ -117,9 +119,9 @@ export default function Home() {
               <h2 style={{ margin: "14px 0 20px" }}>Perspectives that <span className="it">emerge</span> when a draft meets an audience.</h2>
               <p className="lead">Instead of one score, ManyWays is built around a panel of audience viewpoints. Insight comes from where they agree, where they split, and what each version costs you.</p>
               <div className="list">
-                <div><Users size={18} /><span><strong>Audience first</strong>Description, age range, style, outcome, and success metric frame every comparison.</span></div>
-                <div><Scale size={18} /><span><strong>Trade-offs over rankings</strong>Qualitative fit and honest risks rather than false precision.</span></div>
-                <div><Compass size={18} /><span><strong>Reasoned recommendation</strong>A suggested version with the rationale and what to watch for.</span></div>
+                <div><Users size={18} /><span><strong>Audience first</strong>Outcome, audience, age range, tone and constraints frame every evaluation.</span></div>
+                <div><Scale size={18} /><span><strong>Trade-offs over rankings</strong>Common 1 to 5 rubric, evidence quotes and honest risks.</span></div>
+                <div><Compass size={18} /><span><strong>Reasoned recommendation</strong>Rankings with rationale, uncertainty and suggested edits, only for complete runs.</span></div>
               </div>
             </Reveal>
           </div>
@@ -128,21 +130,21 @@ export default function Home() {
         <section className="s" id="modes" style={{ paddingTop: 0 }}>
           <div className="wrap">
             <Reveal className="sec-head">
-              <span className="mono">05 / Two disciplines, one workflow</span>
-              <h2>For the post you publish and the <span className="it">scene</span> you write.</h2>
+              <span className="mono">05 / Use cases</span>
+              <h2>For the story with <span className="it">forks</span> and the copy with options.</h2>
             </Reveal>
             <div className="modes">
               <Reveal className="mode">
                 <Layers size={22} color="#ee4a1c" />
-                <h3>Social Content</h3>
-                <p className="lead" style={{ fontSize: 16 }}>LinkedIn posts, launch copy, hooks and messaging.</p>
-                <ul><li>Compare openings and tone</li><li>Weigh clarity against curiosity</li><li>Check promotional risk</li></ul>
+                <h3>Branching stories</h3>
+                <p className="lead" style={{ fontSize: 16 }}>Interactive fiction, scenes and character decisions.</p>
+                <ul><li>Fork a scene into directions</li><li>Compare comprehension and goal fit</li><li>Export each complete path</li></ul>
               </Reveal>
               <Reveal className="mode alt" delay={100}>
                 <GitBranch size={22} color="#ee4a1c" />
-                <h3>Storytelling</h3>
-                <p className="lead" style={{ fontSize: 16 }}>Scenes, excerpts, and character decisions.</p>
-                <ul><li>Fork a scene into directions</li><li>Compare resonance and pacing</li><li>Keep every lineage</li></ul>
+                <h3>Alternate drafts</h3>
+                <p className="lead" style={{ fontSize: 16 }}>Hooks, launch copy and messaging.</p>
+                <ul><li>Weigh clarity against curiosity</li><li>See where personas disagree</li><li>Choose with a stated reason</li></ul>
               </Reveal>
             </div>
           </div>
@@ -156,9 +158,9 @@ export default function Home() {
             </Reveal>
             <Reveal className="honest">
               <div className="hbox"><h3><Check size={16} color="#0e7a6b" /> ManyWays helps you</h3>
-                <ul><li>Keep the original beside every alternative</li><li>Name the audience and the goal in writing</li><li>See trade-offs before you commit</li><li>Choose a version with a stated reason</li></ul></div>
+                <ul><li>Keep every branch beside its siblings</li><li>Name the audience and the goal in writing</li><li>See trade-offs before you commit</li><li>Choose a version with a stated reason</li></ul></div>
               <div className="hbox"><h3><XIcon size={16} color="#b3261e" /> ManyWays does not</h3>
-                <ul><li>Guarantee real-world engagement</li><li>Replace testing with real people</li><li>Present sample reports as live analysis</li><li>Send your drafts anywhere in this prototype</li></ul></div>
+                <ul><li>Guarantee real-world engagement</li><li>Replace testing with real people</li><li>Present partial runs as final rankings</li><li>Replace your edits without confirmation</li></ul></div>
             </Reveal>
           </div>
         </section>
@@ -177,10 +179,9 @@ export default function Home() {
             <Reveal className="final">
               <Sparkles size={26} color="#ee4a1c" />
               <h2 style={{ maxWidth: 720 }}>Write the version you <span className="it">did not</span> write yet.</h2>
-              <p className="lead">Open Studio, load the sample, and walk through all four steps in about two minutes.</p>
+              <p className="lead">Sign in, sketch a tree, and see where simulated readers split.</p>
               <div className="cta-row" style={{ justifyContent: "center" }}>
-                <Link href="/studio?sample=1" className="btn">Open the sample experiment <ArrowRight size={16} /></Link>
-                <Link href="/studio" className="btn ghost">Start from blank</Link>
+                <Link href={WORKSPACE_URL} className="btn">Sign in or start writing <ArrowRight size={16} /></Link>
               </div>
             </Reveal>
           </div>
@@ -189,8 +190,8 @@ export default function Home() {
       <footer>
         <div className="wrap foot">
           <span className="logo" style={{ fontSize: 15 }}><Logo size={22} /> ManyWays</span>
-          <nav aria-label="Footer"><a href="#problem">Why</a><a href="#method">Method</a><a href="#faq">FAQ</a><Link href="/studio">Studio</Link></nav>
-          <span>Early prototype. Sample reports are illustrative.</span>
+          <nav aria-label="Footer"><a href="#problem">Why</a><a href="#method">Workflow</a><a href="#faq">FAQ</a><Link href={WORKSPACE_URL}>Workspace</Link></nav>
+          <span>Simulated readers, not measured engagement.</span>
         </div>
       </footer>
     </>
