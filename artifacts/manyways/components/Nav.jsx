@@ -3,12 +3,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import Logo from "./Logo";
+import { WORKSPACE_URL } from "../lib/navigation";
 
 const links = [
   ["#problem", "Why"],
-  ["#method", "Method"],
+  ["#method", "Workflow"],
   ["#branches", "Branching"],
   ["#intelligence", "Intelligence"],
+  ["#modes", "Use cases"],
   ["#honesty", "Honesty"],
   ["#faq", "FAQ"],
 ];
@@ -30,11 +32,9 @@ export default function Nav() {
           {links.map(([h, l]) => (
             <a key={h} href={h} onClick={() => setOpen(false)}>{l}</a>
           ))}
-          <Link href="/studio" onClick={() => setOpen(false)}>Studio</Link>
         </nav>
         <div className="nav-right">
-          <Link href="/studio?sample=1" className="btn ghost sm">Try the sample</Link>
-          <Link href="/studio" className="btn sm">Open Studio <ArrowUpRight size={14} /></Link>
+          <Link href={WORKSPACE_URL} className="btn sm">Sign in or start <ArrowUpRight size={14} /></Link>
           <button className="burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? <X size={18} /> : <Menu size={18} />}
           </button>

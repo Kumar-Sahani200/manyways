@@ -5,3 +5,10 @@ dist/
 *.log
 .env*
 /generated-artifacts/
+!.env.example
+!**/.env.example
+.pythonlibs/
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/

@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata = {
   title: "ManyWays | Explore every version before it goes live",
@@ -9,7 +10,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" signInForceRedirectUrl="/workspace" signUpForceRedirectUrl="/workspace" afterSignOutUrl="/">{children}</ClerkProvider></body>
     </html>
   );
 }

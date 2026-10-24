@@ -1,0 +1,23 @@
+kind = "web"
+previewPath = "/"
+title = "ManyWays"
+description = "Creative experimentation frontend built with Next.js and JavaScript."
+version = "1.0.0"
+id = "artifacts/manyways"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24906
+
+[services.development]
+run = "pnpm --filter @workspace/manyways run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/manyways", "run", "build" ]
+run = "pnpm --filter @workspace/manyways run start"
+
+[services.env]
+PORT = "24906"
+BASE_PATH = "/"

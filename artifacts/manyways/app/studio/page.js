@@ -1,7 +1,7 @@
-import Studio from "../../components/studio/Studio";
+import { redirect } from "next/navigation";
 
 export const metadata = { title: "Studio | ManyWays" };
 
 export default function StudioPage() {
-  return <Studio />;
+  redirect("/workspace");
 }
