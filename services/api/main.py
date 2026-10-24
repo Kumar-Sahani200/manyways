@@ -169,8 +169,14 @@ def start_run(project_id: str, body: RunCreate, user=Depends(owner), db=Depends(
     from datetime import timedelta
     if db.runs.count_documents({"owner": user, "createdAt": {"$gte": now() - timedelta(days=1)}}, limit=20) >= 20:
         raise HTTPException(429, "Daily run limit reached (20). Try again tomorrow.")
+    run_id = new_id()
     run = {
-        "id": new_id(), "owner": user, "projectId": project_id,
+        "id": run_id, "owner": user, "projectId": project_id,
+        # The existing Atlas collection also has legacy non-sparse unique
+        # request_key/active_key indexes. Missing fields collide on null.
+        # Supply namespaced unique values, without dropping another schema's
+        # indexes; our active=True partial index remains the project lock.
+        "request_key": f"manyways:{run_id}", "active_key": f"manyways:{run_id}",
         "kind": body.kind, "status": "queued", "active": True, "stage": "Waiting for worker",
         "projectVersion": project["version"],
         "snapshot": {"goal": project["goal"], "nodes": project["nodes"], "paths": paths},

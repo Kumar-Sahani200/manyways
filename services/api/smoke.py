@@ -1,30 +1,24 @@
-"""Bounded provider discovery check. Never prints credentials or agent content."""
-import os
+"""Small real Groq + LangChain structured-output check; never prints credentials."""
 import sys
 
-import httpx
-from agenticorg import AgenticOrg
+from pydantic import BaseModel, ConfigDict
 
-from .provider import ProviderError, check_config
+from .provider import ProviderError, structured
+
+
+class Probe(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    ok: bool
 
 
 def main():
     try:
-        check_config(for_execution=False)
-        with AgenticOrg(
-            api_key=os.environ["AGENTICORG_API_KEY"],
-            base_url=os.environ["AGENTICORG_BASE_URL"], timeout=20,
-        ) as client:
-            client.agents.list()
-        print("AgenticOrg authenticated discovery succeeded. Agent execution still requires a bounded live run.")
-    except ProviderError as exc:
-        print(str(exc), file=sys.stderr)
-        sys.exit(1)
-    except httpx.HTTPStatusError as exc:
-        print(f"AgenticOrg discovery denied (HTTP {exc.response.status_code}). Check grants and endpoint.", file=sys.stderr)
-        sys.exit(1)
+        result = structured("rank", "rank_stories", {"task": "Connectivity probe only. Return JSON {\"ok\":true}."}, Probe)
+        if not result["ok"]:
+            raise ProviderError("Groq did not acknowledge the probe.")
+        print("Groq authentication and LangChain structured output: PASS. Full graph execution is a separate check.")
     except Exception as exc:
-        print(f"AgenticOrg discovery failed ({type(exc).__name__}). No credentials or response bodies were logged.", file=sys.stderr)
+        print(str(exc) if isinstance(exc, ProviderError) else f"Groq probe failed ({type(exc).__name__}).", file=sys.stderr)
         sys.exit(1)
 
 

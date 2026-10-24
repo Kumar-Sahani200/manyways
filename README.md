@@ -2,7 +2,7 @@
 
 Emergent Intelligence for creative decisions. A Next.js **JavaScript** workspace
 for editable story trees, backed by **Python FastAPI**, **MongoDB Atlas**,
-**Clerk**, and the **AgenticOrg 0.4.0 SDK**.
+**Clerk**, **LangChain**, **LangGraph**, and **Groq**.
 
 ## Product flow
 
@@ -14,7 +14,7 @@ for editable story trees, backed by **Python FastAPI**, **MongoDB Atlas**,
 5. Save projects, reopen earlier runs, and download one, selected, or all paths.
 
 These are simulated perspectives, **not real survey participants or engagement
-forecasts**. Generation/evaluation sends selected text and goals to AgenticOrg.
+forecasts**. Generation/evaluation sends selected text and goals to Groq.
 Do not upload confidential content or sensitive personal information.
 
 ## Architecture
@@ -33,7 +33,9 @@ app.manyways.si (FastAPI on Render)
                   │ durable jobs + leases
          Python worker on Render
                   │
-       AgenticOrg: branch / audience / rank
+       LangGraph: branch / audience / rank
+                  │
+       LangChain ChatGroq → Groq
 ```
 
 All user-facing pages stay in one Next.js deployment on manyways.si, including
@@ -62,8 +64,9 @@ Required service setup:
 - An external Clerk application with email and Google enabled.
 - A MongoDB Atlas database user with least-privilege `readWrite` access to
   `manyways`; permit the backend host's outbound IPs and use TLS.
-- A reviewed AgenticOrg base URL, authorized company UUID, and three configured,
-  executable agents. See [AgenticOrg contract](docs/agenticorg.md).
+- `GROQ_API_KEY`; optionally `GROQ_MODEL` (default `openai/gpt-oss-20b`).
+  See [active workflow and preserved pseudocode](docs/agent-workflow.md).
+  The original [AgenticOrg reference](docs/agenticorg.md) is archived, not executed.
 
 Start **three processes**, from the repository root:
 
@@ -107,7 +110,10 @@ This signs in a temporary synthetic Clerk user through a short-lived ticket,
 checks real gateway/JWT verification, Atlas persistence, UI edits/reopening, and
 branch export, then deletes the test project and user. It refuses production
 Clerk instances and never prints tokens. It does not test Google consent or
-AgenticOrg execution.
+Groq execution.
+
+Append `--agents` to also exercise real Groq generation, review/apply,
+ten personas × two paths, twenty validated responses, and orchestration.
 
 GitHub Actions checks Python contracts, UI component journeys, production build,
 and Chromium smoke tests. CI and Vercel deployments are independent unless branch

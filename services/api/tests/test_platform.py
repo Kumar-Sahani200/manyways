@@ -242,15 +242,11 @@ def test_auth_signature_issuer_party_and_expiry(monkeypatch):
 
 def test_provider_schema_failure_not_silently_replaced(monkeypatch):
     monkeypatch.setattr(provider, "check_config", lambda: None)
-    for key in ["AGENTICORG_API_KEY", "AGENTICORG_BASE_URL", "AGENTICORG_COMPANY_ID",
-                "AGENTICORG_BRANCH_AGENT_ID"]:
-        monkeypatch.setenv(key, "test-only")
     class Client:
-        def __init__(self, **kwargs):
-            self.agents = SimpleNamespace(run=lambda *a, **kw: SimpleNamespace(status="completed", output={"invalid": True}))
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
-    monkeypatch.setattr(provider, "AgenticOrg", Client)
+        def __init__(self, **kwargs): pass
+        def with_structured_output(self, *args, **kwargs): return self
+        def invoke(self, messages): return {"parsed": None, "parsing_error": ValueError("bad fixture")}
+    monkeypatch.setattr(provider, "ChatGroq", Client)
     from services.api.models import GeneratedTree
     with pytest.raises(provider.ProviderError, match="invalid structured output"):
         provider.structured("branch", "branch_story", {}, GeneratedTree)
@@ -270,11 +266,37 @@ def test_invented_evidence_rejected(setup):
     assert result["ranking"] is None
 
 
-def test_discovery_configuration_does_not_require_agent_ids(monkeypatch):
-    monkeypatch.setenv("AGENTICORG_API_KEY", "test-only")
-    monkeypatch.setenv("AGENTICORG_BASE_URL", "https://provider.example")
-    for key in ["AGENTICORG_COMPANY_ID", *provider.AGENT_SETTINGS.values()]:
+def test_groq_needs_no_agenticorg_configuration(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "test-only")
+    for key in ["AGENTICORG_API_KEY", "AGENTICORG_BASE_URL", "AGENTICORG_COMPANY_ID"]:
         monkeypatch.delenv(key, raising=False)
-    provider.check_config(for_execution=False)
-    with pytest.raises(provider.ProviderError, match="AGENTICORG_COMPANY_ID"):
+    provider.check_config()
+    monkeypatch.delenv("GROQ_API_KEY")
+    with pytest.raises(provider.ProviderError, match="GROQ_API_KEY"):
         provider.check_config()
+
+
+def test_provider_rejects_oversized_input_before_api_call(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "test-only")
+    from services.api.models import Ranking
+    with pytest.raises(provider.ProviderError, match="input budget"):
+        provider.structured("rank", "rank_stories", {"text": "x" * 240001}, Ranking)
+
+
+def test_generation_then_evaluation_coexists_with_legacy_unique_indexes(setup):
+    client, db = setup
+    db.runs.create_index("request_key", unique=True)
+    db.runs.create_index("active_key", unique=True)
+    project = saved(client)
+    generated = client.post(f"/v1/projects/{project['id']}/runs", json={
+        "kind": "generate", "expectedVersion": 2, "sourceText": "A mysterious door opens into an abandoned observatory.",
+    })
+    assert generated.status_code == 202
+    execute(db, claim(db, "worker"), "worker", fake_call)
+    applied = client.post(f"/v1/runs/{generated.json()['id']}/apply").json()
+    evaluated = client.post(f"/v1/projects/{project['id']}/runs", json={
+        "kind": "evaluate", "expectedVersion": applied["version"], "personaCount": 10,
+        "branchIds": ["end-left", "end-right"],
+    })
+    assert evaluated.status_code == 202
+    assert "active_key" not in evaluated.json()

@@ -26,17 +26,11 @@ services:
         sync: false
       - key: CLERK_AUTHORIZED_PARTIES
         value: https://manyways.si,https://www.manyways.si
-      - key: AGENTICORG_BASE_URL
-        sync: false
-      - key: AGENTICORG_API_KEY
-        sync: false
-      - key: AGENTICORG_COMPANY_ID
-        sync: false
-      - key: AGENTICORG_BRANCH_AGENT_ID
-        sync: false
-      - key: AGENTICORG_AUDIENCE_AGENT_ID
-        sync: false
-      - key: AGENTICORG_RANKER_AGENT_ID
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: LANGSMITH_TRACING
+        value: "false"
+      - key: GROQ_API_KEY
         sync: false
 
   - type: worker
@@ -62,33 +56,15 @@ services:
           type: web
           name: manyways-api
           envVarKey: MONGODB_URI
-      - key: AGENTICORG_BASE_URL
+      - key: GROQ_API_KEY
         fromService:
           type: web
           name: manyways-api
-          envVarKey: AGENTICORG_BASE_URL
-      - key: AGENTICORG_API_KEY
+          envVarKey: GROQ_API_KEY
+      - key: GROQ_MODEL
         fromService:
           type: web
           name: manyways-api
-          envVarKey: AGENTICORG_API_KEY
-      - key: AGENTICORG_COMPANY_ID
-        fromService:
-          type: web
-          name: manyways-api
-          envVarKey: AGENTICORG_COMPANY_ID
-      - key: AGENTICORG_BRANCH_AGENT_ID
-        fromService:
-          type: web
-          name: manyways-api
-          envVarKey: AGENTICORG_BRANCH_AGENT_ID
-      - key: AGENTICORG_AUDIENCE_AGENT_ID
-        fromService:
-          type: web
-          name: manyways-api
-          envVarKey: AGENTICORG_AUDIENCE_AGENT_ID
-      - key: AGENTICORG_RANKER_AGENT_ID
-        fromService:
-          type: web
-          name: manyways-api
-          envVarKey: AGENTICORG_RANKER_AGENT_ID
+          envVarKey: GROQ_MODEL
+      - key: LANGSMITH_TRACING
+        value: "false"

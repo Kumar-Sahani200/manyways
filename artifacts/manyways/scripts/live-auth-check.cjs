@@ -86,6 +86,65 @@ async function main() {
     if (exported.status !== 200 || exported.text !== "A door opens. A letter waits.\n\nShe steps inside.") {
       throw new Error("Live branch export did not contain the saved root-to-end path.");
     }
+    if (process.argv.includes("--agents")) {
+      const api = (path, method = "GET", body) => page.evaluate(async ({ path, method, body }) => {
+        const response = await fetch(`/api/backend${path}`, {
+          method, headers: { "Content-Type": "application/json" },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          return { httpFailure: response.status, detail: error.detail };
+        }
+        return response.json();
+      }, { path, method, body });
+      const waitRun = async id => {
+        const deadline = Date.now() + 240000;
+        let lastStage;
+        while (Date.now() < deadline) {
+          const run = await api(`/runs/${id}`);
+          if (run.httpFailure) throw new Error(`Live run fetch failed (HTTP ${run.httpFailure}).`);
+          if (run.stage !== lastStage) {
+            console.log("Live graph stage:", run.stage);
+            lastStage = run.stage;
+          }
+          if (["completed", "partial", "failed", "cancelled"].includes(run.status)) {
+            if (["partial", "failed"].includes(run.status)) {
+              const errors = {};
+              for (const failure of run.failures || []) errors[failure.error] = (errors[failure.error] || 0) + 1;
+              console.log("Live graph diagnostic:", JSON.stringify({ status: run.status, progress: run.progress, total: run.total, error: run.error, categories: errors }));
+            }
+            return run;
+          }
+          await page.waitForTimeout(2000);
+        }
+        throw new Error("Live graph did not finish within four minutes.");
+      };
+      let current = await api(`/projects/${projectId}`);
+      const generation = await api(`/projects/${projectId}/runs`, "POST", {
+        kind: "generate", expectedVersion: current.version,
+        sourceText: "Mara finds an unsigned letter beneath a locked observatory door. It warns that a signal will arrive at midnight and asks her to choose whether to trust a stranger. She has one hour to decide what to protect: the town's secret or the truth. The telescope turns without power. Her brother's familiar whistle comes from the abandoned stairwell.",
+      });
+      if (!generation.id) throw new Error(`Live generation could not start (HTTP ${generation.httpFailure}).`);
+      const generated = await waitRun(generation.id);
+      if (generated.status !== "completed") throw new Error("Live generation failed; inspect its sanitized run error.");
+      current = await api(`/runs/${generation.id}/apply`, "POST");
+      const endings = current.nodes?.filter(n => n.kind === "end").map(n => n.id).slice(0, 2);
+      if (!endings || endings.length !== 2) throw new Error("Live generation did not produce two usable endings.");
+      const evaluation = await api(`/projects/${projectId}/runs`, "POST", {
+        kind: "evaluate", expectedVersion: current.version, personaCount: 10, branchIds: endings,
+      });
+      if (!evaluation.id) throw new Error(`Live evaluation could not start (HTTP ${evaluation.httpFailure}: ${evaluation.detail}).`);
+      const evaluated = await waitRun(evaluation.id);
+      if (evaluated.status !== "completed" || evaluated.personas.length !== 10 ||
+          evaluated.evaluations.length !== 20 || evaluated.ranking?.rankings?.length !== 2) {
+        throw new Error("Live evaluation did not produce the complete 10 × 2 matrix and ranking.");
+      }
+      await page.reload();
+      await page.getByRole("button", { name: /^Acceptance check — temporary story/ }).click();
+      await page.getByRole("tab", { name: /^Runs/ }).click();
+      console.log("PASS: Live Groq generation, review/apply, 10 personas × 2 branches, 20 validated evaluations, and final ranking.");
+    }
     await page.screenshot({ path: "../../generated-artifacts/live-workspace.jpg", fullPage: false });
     console.log("PASS: Real Clerk development sign-in, JWT gateway, Atlas create/save/reopen, UI edit persistence, and branch export.");
   } finally {

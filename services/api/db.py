@@ -32,4 +32,5 @@ def indexes(db):
 def public(record):
     if record is None:
         raise HTTPException(404, "Not found.")
-    return {k: v for k, v in record.items() if k not in {"_id", "owner", "workerId", "leaseUntil", "active"}}
+    return {k: v for k, v in record.items() if k not in {"_id", "owner", "workerId", "leaseUntil", "active",
+                                                       "request_key", "active_key"}}

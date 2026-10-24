@@ -1,5 +1,10 @@
 # AgenticOrg integration contract
 
+> **Archived reference, not the active implementation.** The owner pivoted to
+> LangChain + LangGraph + Groq. This document preserves the original reference
+> and role design; no runtime imports, credentials or agent IDs depend on it.
+> See [active workflow and pseudocode](agent-workflow.md).
+
 ## Verified interface
 
 Reviewed references:

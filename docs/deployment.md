@@ -50,7 +50,7 @@ Worker:
 python -m services.api.worker
 ```
 
-The blueprint prompts for MongoDB and AgenticOrg settings on the API service
+The blueprint prompts for MongoDB and Groq settings on the API service
 and shares those backend settings with the worker using service references.
 Clerk verifier settings belong to the API; Clerk publishable/secret keys belong
 only to the Next.js frontend. The API uses its own Clerk JWT/JWKS verification; it does not trust

@@ -5,8 +5,10 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import timedelta
+from typing import TypedDict
 from uuid import uuid4
 
+from langgraph.graph import END, START, StateGraph
 from pymongo import ReturnDocument
 
 from .db import database, indexes, now
@@ -18,6 +20,12 @@ log = logging.getLogger("manyways.worker")
 
 class Cancelled(Exception):
     pass
+
+
+class AgentState(TypedDict, total=False):
+    personas: list[dict]
+    evaluations: list[dict]
+    complete: bool
 
 
 def claim(db, worker_id):
@@ -62,7 +70,7 @@ def execute(db, run, worker_id, call=structured):
 
     goal = run["snapshot"]["goal"]
     try:
-        if run["kind"] == "generate":
+        def generate_story(state):
             active()
             update({"stage": "Composing alternate story paths"})
             generated = call("branch", "branch_story", {
@@ -75,11 +83,14 @@ def execute(db, run, worker_id, call=structured):
             active()
             update({"generatedNodes": generated["nodes"], "progress": 1, "status": "completed",
                     "active": False, "stage": "Ready to review and apply"})
-            return
+            return {}
 
-        paths = run["snapshot"]["paths"]
-        personas = run.get("personas", [])
-        if not personas:
+        paths = run["snapshot"].get("paths", [])
+
+        def design_audience(state):
+            active()
+            if run.get("personas"):
+                return {"personas": run["personas"]}
             update({"stage": "Building the audience ensemble"})
             generated = call("audience", "generate_personas", {
                 "goal": goal, "count": run["personaCount"],
@@ -90,13 +101,9 @@ def execute(db, run, worker_id, call=structured):
             }, PersonaSet)
             personas = generated["personas"]
             if len(personas) != run["personaCount"]:
-                raise ProviderError("AgenticOrg returned the wrong number of personas.")
+                raise ProviderError("The audience designer returned the wrong number of personas.")
             update({"personas": personas})
-        active()
-        evaluations = list(run.get("evaluations", []))
-        done = {(e["personaId"], e["branchId"]) for e in evaluations}
-        failures = []
-        update({"stage": "Reading every completed story path", "progress": len(evaluations)})
+            return {"personas": personas}
 
         def evaluate(persona, path):
             active()
@@ -113,45 +120,71 @@ def execute(db, run, worker_id, call=structured):
                 raise ProviderError("An evaluation included evidence not present in the story.")
             return result
 
-        with ThreadPoolExecutor(max_workers=max(1, min(3, int(os.getenv("AGENT_CONCURRENCY", "3"))))) as pool:
-            pending = {
-                pool.submit(evaluate, persona, path): (persona["id"], path["id"])
-                for persona in personas for path in paths
-                if (persona["id"], path["id"]) not in done
-            }
-            for future in as_completed(pending):
-                active()
-                try:
-                    result = future.result()
-                    evaluations.append(result)
-                except Cancelled:
-                    raise
-                except Exception as exc:
-                    pair = pending[future]
-                    failures.append({"personaId": pair[0], "branchId": pair[1],
-                                     "error": str(exc) if isinstance(exc, ProviderError) else "Evaluation failed."})
-                update({"evaluations": evaluations, "failures": failures, "progress": len(evaluations)})
-        active()
-        expected = len(personas) * len(paths)
-        if failures or len(evaluations) != expected:
-            update({"status": "partial", "active": False, "stage": "Incomplete evaluation",
-                    "error": f"{len(evaluations)}/{expected} evaluations succeeded. No final ranking was generated."})
-            return
-        update({"stage": "Orchestrating the ranking"})
-        ranking = call("rank", "rank_stories", {
-            "goal": goal, "branches": paths, "personas": personas, "evaluations": evaluations,
-            "task": "Rank every supplied branch exactly once against the stated goal, not majority taste alone. "
-                    "Use ranks1..N and score0..10. Explain criterion weights in rationale, quote evidence accurately, "
-                    "surface audience disagreement, identify risks and specific edits, "
-                    "and state uncertainty. Do not claim empirical prediction or demographic representativeness.",
-        }, Ranking)
-        ranked = ranking["rankings"]
-        if ({r["branchId"] for r in ranked} != {p["id"] for p in paths}
-                or len(ranked) != len(paths)
-                or {r["rank"] for r in ranked} != set(range(1, len(paths) + 1))):
-            raise ProviderError("Ranking did not include each requested story exactly once.")
-        active()
-        update({"ranking": ranking, "status": "completed", "active": False, "stage": "Ranking complete"})
+        def evaluate_matrix(state):
+            active()
+            personas = state["personas"]
+            evaluations = list(run.get("evaluations", []))
+            done = {(e["personaId"], e["branchId"]) for e in evaluations}
+            failures = []
+            update({"stage": "Reading every completed story path", "progress": len(evaluations)})
+            with ThreadPoolExecutor(max_workers=max(1, min(3, int(os.getenv("AGENT_CONCURRENCY", "3"))))) as pool:
+                pending = {
+                    pool.submit(evaluate, persona, path): (persona["id"], path["id"])
+                    for persona in personas for path in paths if (persona["id"], path["id"]) not in done
+                }
+                for future in as_completed(pending):
+                    active()
+                    try:
+                        evaluations.append(future.result())
+                    except Cancelled:
+                        raise
+                    except Exception as exc:
+                        pair = pending[future]
+                        failures.append({"personaId": pair[0], "branchId": pair[1],
+                                         "error": str(exc) if isinstance(exc, ProviderError) else "Evaluation failed."})
+                    update({"evaluations": evaluations, "failures": failures, "progress": len(evaluations)})
+            active()
+            expected = len(personas) * len(paths)
+            complete = not failures and len(evaluations) == expected
+            if not complete:
+                update({"status": "partial", "active": False, "stage": "Incomplete evaluation",
+                        "error": f"{len(evaluations)}/{expected} evaluations succeeded. No final ranking was generated."})
+            return {"evaluations": evaluations, "complete": complete}
+
+        def rank_paths(state):
+            active()
+            update({"stage": "Orchestrating the ranking"})
+            ranking = call("rank", "rank_stories", {
+                "goal": goal, "branches": paths, "personas": state["personas"], "evaluations": state["evaluations"],
+                "task": "Rank every supplied branch exactly once against the stated goal, not majority taste alone. "
+                        "Use ranks1..N and score0..10. Explain criterion weights in rationale, quote evidence accurately, "
+                        "surface audience disagreement, identify risks and specific edits, "
+                        "and state uncertainty. Do not claim empirical prediction or demographic representativeness.",
+            }, Ranking)
+            ranked = ranking["rankings"]
+            if ({r["branchId"] for r in ranked} != {p["id"] for p in paths}
+                    or len(ranked) != len(paths)
+                    or {r["rank"] for r in ranked} != set(range(1, len(paths) + 1))):
+                raise ProviderError("Ranking did not include each requested story exactly once.")
+            active()
+            update({"ranking": ranking, "status": "completed", "active": False, "stage": "Ranking complete"})
+            return {}
+
+        # Mongo remains the durable checkpoint authority across worker processes.
+        # Re-entering this graph reuses saved personas and completed matrix pairs.
+        graph = StateGraph(AgentState)
+        graph.add_node("branch_story", generate_story)
+        graph.add_node("design_audience", design_audience)
+        graph.add_node("evaluate_matrix", evaluate_matrix)
+        graph.add_node("rank_paths", rank_paths)
+        graph.add_conditional_edges(START, lambda _: "branch_story" if run["kind"] == "generate" else "design_audience",
+                                    {"branch_story": "branch_story", "design_audience": "design_audience"})
+        graph.add_edge("branch_story", END)
+        graph.add_edge("design_audience", "evaluate_matrix")
+        graph.add_conditional_edges("evaluate_matrix", lambda state: "rank_paths" if state["complete"] else END,
+                                    {"rank_paths": "rank_paths", END: END})
+        graph.add_edge("rank_paths", END)
+        graph.compile().invoke({}, config={"recursion_limit": 8})
     except Cancelled:
         pass
     except Exception as exc:
