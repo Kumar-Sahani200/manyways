@@ -1,5 +1,15 @@
 import { test, expect } from "@playwright/test";
 
+// CI runs with a placeholder Clerk development key whose Frontend API host does not
+// exist. Clerk's middleware sends first-time browsers there for a "dev browser"
+// handshake, so give the test browser a placeholder dev-browser cookie. It grants
+// nothing: protected routes still redirect to sign-in and the API still returns 401.
+test.beforeEach(async ({ context, baseURL }) => {
+  if (process.env.CLERK_CI_PLACEHOLDER === "1") {
+    await context.addCookies([{ name: "__clerk_db_jwt", value: "ci-placeholder", url: baseURL }]);
+  }
+});
+
 test("marketing explains the actual product without sample entry points", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("every version");

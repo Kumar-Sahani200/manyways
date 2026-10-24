@@ -25,6 +25,7 @@ jobs:
       # Deliberately fake, test-only configuration. Never authenticates a user.
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS50ZXN0JA
       CLERK_SECRET_KEY: sk_test_ci_only_not_a_real_key
+      CLERK_CI_PLACEHOLDER: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

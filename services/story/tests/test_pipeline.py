@@ -172,6 +172,7 @@ def test_agenticorg_pending_output_and_cleanup_never_block(monkeypatch):
 
     monkeypatch.setenv("AGENTICORG_API_KEY", "test-only-not-a-key")
     monkeypatch.setenv("AGENTICORG_AGENT_ID", "test-agent")
+    monkeypatch.setenv("AGENTICORG_BASE_URL", "https://agenticorg.invalid")
     monkeypatch.setattr("services.story.provider.AgenticOrg", Client)
     result = agenticorg_advice({"branches": [], "evaluations": []})
     assert len(calls) == 1
